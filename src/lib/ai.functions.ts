@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -42,13 +42,19 @@ export const generateEmail = createServerFn({ method: "POST" })
 export const summarizeMeeting = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => z.object({ notes: z.string().min(1) }).parse(v))
   .handler(async ({ data }) => {
-    const { text } = await generateText({
+    const MeetingSummarySchema = z.object({
+      keyPoints: z.string(),
+      actionItems: z.string(),
+      deadlines: z.string(),
+    });
+    const { output } = await generateText({
       model: getModel(),
       system:
-        "You summarize meeting notes. Return Markdown with these exact sections: '## Summary', '## Key Points' (bulleted), '## Action Items' (bulleted, with owner in **bold** when mentioned), '## Deadlines' (bulleted, include dates when present). Be concise and specific.",
+        "You summarize meeting notes into three markdown sections. Return ONLY a JSON object with these exact keys: keyPoints (a markdown bulleted list of key takeaways), actionItems (a markdown bulleted list of tasks, with owners in bold when mentioned), and deadlines (a markdown bulleted list of deadlines with dates when present). Be concise and specific.",
       prompt: data.notes,
+      output: Output.object({ schema: MeetingSummarySchema }),
     });
-    return { text };
+    return output;
   });
 
 export const planTasks = createServerFn({ method: "POST" })

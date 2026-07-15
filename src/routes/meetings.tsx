@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { FileText, Loader2, Sparkles, CheckSquare, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { MarkdownView } from "@/components/MarkdownView";
@@ -23,6 +24,8 @@ function MeetingsPage() {
     onError: (e: Error) => toast.error(e.message || "Failed"),
   });
 
+  const result = mut.data;
+
   return (
     <AppShell>
       <PageHeader
@@ -30,12 +33,12 @@ function MeetingsPage() {
         title="Meeting Notes Summarizer"
         description="Key points, action items, and deadlines"
       />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-6">
         <div className="card-surface p-5">
-          <Label htmlFor="notes">Paste your raw meeting notes or transcript</Label>
+          <Label htmlFor="notes">Paste Meeting Notes</Label>
           <Textarea
             id="notes"
-            rows={16}
+            rows={14}
             className="mt-1.5"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -46,20 +49,59 @@ function MeetingsPage() {
             onClick={() => notes.trim() && mut.mutate({ notes })}
             disabled={!notes.trim() || mut.isPending}
           >
-            {mut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Summarizing…</> : "Summarize meeting"}
+            {mut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Summarizing…</> : "Summarize"}
           </Button>
         </div>
-        <div className="card-surface p-5">
-          <h3 className="mb-3 text-sm font-semibold">Summary</h3>
-          {mut.isPending ? (
-            <p className="text-sm text-muted-foreground">Extracting insights…</p>
-          ) : mut.data?.text ? (
-            <MarkdownView text={mut.data.text} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Your summary will appear here.</p>
-          )}
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <SummaryCard
+            icon={Sparkles}
+            title="Key Points"
+            content={result?.keyPoints}
+            isLoading={mut.isPending}
+          />
+          <SummaryCard
+            icon={CheckSquare}
+            title="Action Items"
+            content={result?.actionItems}
+            isLoading={mut.isPending}
+          />
+          <SummaryCard
+            icon={CalendarClock}
+            title="Deadlines"
+            content={result?.deadlines}
+            isLoading={mut.isPending}
+          />
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function SummaryCard({
+  icon: Icon,
+  title,
+  content,
+  isLoading,
+}: {
+  icon: LucideIcon;
+  title: string;
+  content?: string;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="card-surface p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Extracting…</p>
+      ) : content ? (
+        <MarkdownView text={content} />
+      ) : (
+        <p className="text-sm text-muted-foreground">Results will appear here.</p>
+      )}
+    </div>
   );
 }

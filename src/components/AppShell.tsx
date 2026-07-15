@@ -15,6 +15,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+          <footer className="border-t px-4 py-3 text-center text-xs text-muted-foreground">
+            AI-generated content may require human review.
+          </footer>
         </div>
       </div>
     </SidebarProvider>

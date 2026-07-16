@@ -74,13 +74,18 @@ export const planTasks = createServerFn({ method: "POST" })
 export const researchTopic = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => z.object({ topic: z.string().min(1) }).parse(v))
   .handler(async ({ data }) => {
-    const { text } = await generateText({
+    const ResearchSchema = z.object({
+      summary: z.string().describe("A concise 2-3 sentence executive summary of the topic."),
+      insights: z.array(z.string()).length(3).describe("Exactly 3 distinct, concrete insight bullets."),
+    });
+    const { output } = await generateText({
       model: getModel(),
       system:
-        "You are an AI research assistant. Given a topic, produce Markdown with '## Executive Summary' (2-3 sentences), '## Key Insights' (5-7 bullets), '## Considerations & Risks' (bullets), and '## Suggested Next Steps' (bullets). Be concrete and non-generic.",
+        "You are an AI research assistant. Given a topic, return a JSON object with a concise executive summary paragraph and exactly 3 concrete, non-generic insight bullets. Each insight should be a single paragraph or bullet sentence.",
       prompt: data.topic,
+      output: Output.object({ schema: ResearchSchema }),
     });
-    return { text };
+    return output;
   });
 
 export const chat = createServerFn({ method: "POST" })

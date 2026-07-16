@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Search, Loader2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Search, Loader2, Lightbulb, Zap, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { MarkdownView } from "@/components/MarkdownView";
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/research")({
   component: ResearchPage,
 });
 
+const INSIGHT_ICONS: LucideIcon[] = [Lightbulb, Zap, TrendingUp];
+
 function ResearchPage() {
   const [topic, setTopic] = useState("");
   const fn = useServerFn(researchTopic);
@@ -22,6 +25,8 @@ function ResearchPage() {
     mutationFn: (input: { topic: string }) => fn({ data: input }),
     onError: (e: Error) => toast.error(e.message || "Failed"),
   });
+
+  const result = mut.data;
 
   return (
     <AppShell>
@@ -32,7 +37,7 @@ function ResearchPage() {
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card-surface p-5">
-          <Label htmlFor="topic">Research topic or question</Label>
+          <Label htmlFor="topic">Research Topic</Label>
           <Textarea
             id="topic"
             rows={8}
@@ -46,18 +51,47 @@ function ResearchPage() {
             onClick={() => topic.trim() && mut.mutate({ topic })}
             disabled={!topic.trim() || mut.isPending}
           >
-            {mut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Researching…</> : "Run research"}
+            {mut.isPending ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating insights…</>
+            ) : (
+              "Generate Insights"
+            )}
           </Button>
         </div>
-        <div className="card-surface p-5">
-          <h3 className="mb-3 text-sm font-semibold">Insights</h3>
-          {mut.isPending ? (
-            <p className="text-sm text-muted-foreground">Gathering insights…</p>
-          ) : mut.data?.text ? (
-            <MarkdownView text={mut.data.text} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Your research briefing will appear here.</p>
-          )}
+
+        <div className="space-y-6">
+          <div className="card-surface p-5">
+            <h3 className="mb-3 text-sm font-semibold">Summary</h3>
+            {mut.isPending ? (
+              <p className="text-sm text-muted-foreground">Gathering insights…</p>
+            ) : result?.summary ? (
+              <div className="prose-chat text-sm text-foreground">
+                <p>{result.summary}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Your research summary will appear here.</p>
+            )}
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {result?.insights.map((insight, i) => {
+              const Icon = INSIGHT_ICONS[i % INSIGHT_ICONS.length];
+              return (
+                <div key={i} className="card-surface p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Insight {i + 1}</h3>
+                  </div>
+                  <MarkdownView text={insight} />
+                </div>
+              );
+            })}
+            {!result && !mut.isPending && (
+              <div className="card-surface p-5 md:col-span-3">
+                <p className="text-sm text-muted-foreground">Three insight cards will appear here.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AppShell>

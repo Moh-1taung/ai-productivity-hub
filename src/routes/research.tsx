@@ -23,7 +23,6 @@ function ResearchPage() {
   const fn = useServerFn(researchTopic);
   const mut = useMutation({
     mutationFn: (input: { topic: string }) => fn({ data: input }),
-    onError: (e: Error) => toast.error(e.message || "Failed"),
   });
 
   const result = mut.data;
@@ -62,8 +61,8 @@ function ResearchPage() {
         <div className="space-y-6">
           <div className="card-surface p-5">
             <h3 className="mb-3 text-sm font-semibold">Summary</h3>
-            {mut.isPending ? (
-              <p className="text-sm text-muted-foreground">Gathering insights…</p>
+            {mut.isPending && !result?.summary ? (
+              <p className="text-sm text-muted-foreground">Generating summary…</p>
             ) : result?.summary ? (
               <div className="prose-chat text-sm text-foreground">
                 <p>{result.summary}</p>
@@ -82,7 +81,8 @@ function ResearchPage() {
                     <Icon className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold">Insight {i + 1}</h3>
                   </div>
-                  <MarkdownView text={insight} />
+                  <p className="text-sm font-semibold text-foreground">{insight.title}</p>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{insight.explanation}</p>
                 </div>
               );
             })}
@@ -92,6 +92,13 @@ function ResearchPage() {
               </div>
             )}
           </div>
+
+          {mut.isPending && (
+            <p className="text-center text-sm text-muted-foreground">Generating....</p>
+          )}
+          {mut.error && !mut.isPending && (
+            <p className="text-center text-sm text-destructive">Please try a different topic</p>
+          )}
         </div>
       </div>
     </AppShell>

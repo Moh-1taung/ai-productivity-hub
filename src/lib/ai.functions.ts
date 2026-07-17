@@ -1,14 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
-const MODEL = "google/gemini-3.5-flash";
+const MODEL = "openai/gpt-5.5";
 
 function getModel() {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Missing LOVABLE_API_KEY");
-  return createLovableAiGatewayProvider(key)(MODEL);
+  return createLovableAiGatewayProvider(key, { structuredOutputs: true })(MODEL);
 }
 
 export const generateEmail = createServerFn({ method: "POST" })
@@ -75,17 +75,32 @@ export const researchTopic = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => z.object({ topic: z.string().min(1) }).parse(v))
   .handler(async ({ data }) => {
     const ResearchSchema = z.object({
-      summary: z.string().describe("A concise 2-3 sentence executive summary of the topic."),
-      insights: z.array(z.string()).length(3).describe("Exactly 3 distinct, concrete insight bullets."),
+      summary: z.string().describe("A concise 3-sentence executive summary of the topic."),
+      insights: z.array(
+        z.object({
+          title: z.string().describe("A short, bold insight title (a few words)."),
+          explanation: z.string().describe("One sentence explaining the insight."),
+        }),
+      ).describe("Exactly 3 key insights."),
     });
-    const { output } = await generateText({
-      model: getModel(),
-      system:
-        "You are an AI research assistant. Given a topic, return a JSON object with a concise executive summary paragraph and exactly 3 concrete, non-generic insight bullets. Each insight should be a single paragraph or bullet sentence.",
-      prompt: data.topic,
-      output: Output.object({ schema: ResearchSchema }),
-    });
-    return output;
+    try {
+      const { output } = await generateText({
+        model: getModel(),
+        system:
+          "You are an AI research assistant. Given a topic, return a JSON object with a concise 3-sentence executive summary and exactly 3 key insights. Each insight must have a short, bold title and a one-sentence explanation. Be concrete and specific.",
+        prompt: data.topic,
+        output: Output.object({ schema: ResearchSchema }),
+      });
+      return {
+        summary: output.summary,
+        insights: output.insights.slice(0, 3),
+      };
+    } catch (error) {
+      if (NoObjectGeneratedError.isInstance(error)) {
+        return { summary: "", insights: [] };
+      }
+      throw error;
+    }
   });
 
 export const chat = createServerFn({ method: "POST" })

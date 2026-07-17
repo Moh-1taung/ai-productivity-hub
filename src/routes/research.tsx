@@ -4,9 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Search, Loader2, Lightbulb, Zap, TrendingUp } from "lucide-react";
-import { toast } from "sonner";
 import { AppShell, PageHeader } from "@/components/AppShell";
-import { MarkdownView } from "@/components/MarkdownView";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +21,6 @@ function ResearchPage() {
   const fn = useServerFn(researchTopic);
   const mut = useMutation({
     mutationFn: (input: { topic: string }) => fn({ data: input }),
-    onError: (e: Error) => toast.error(e.message || "Failed"),
   });
 
   const result = mut.data;
@@ -62,8 +59,8 @@ function ResearchPage() {
         <div className="space-y-6">
           <div className="card-surface p-5">
             <h3 className="mb-3 text-sm font-semibold">Summary</h3>
-            {mut.isPending ? (
-              <p className="text-sm text-muted-foreground">Gathering insights…</p>
+            {mut.isPending && !result?.summary ? (
+              <p className="text-sm text-muted-foreground">Generating summary…</p>
             ) : result?.summary ? (
               <div className="prose-chat text-sm text-foreground">
                 <p>{result.summary}</p>
@@ -77,12 +74,15 @@ function ResearchPage() {
             {result?.insights.map((insight, i) => {
               const Icon = INSIGHT_ICONS[i % INSIGHT_ICONS.length];
               return (
-                <div key={i} className="card-surface p-5">
+              <div key={i} className="card-surface p-5">
                   <div className="mb-3 flex items-center gap-2">
                     <Icon className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold">Insight {i + 1}</h3>
                   </div>
-                  <MarkdownView text={insight} />
+                  <div className="prose-chat text-sm text-foreground">
+                    <p><strong>{insight.title.replace(/\*\*/g, "")}</strong></p>
+                  </div>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{insight.explanation}</p>
                 </div>
               );
             })}
@@ -92,6 +92,13 @@ function ResearchPage() {
               </div>
             )}
           </div>
+
+          {mut.isPending && (
+            <p className="text-center text-sm text-muted-foreground">Generating....</p>
+          )}
+          {mut.error && !mut.isPending && (
+            <p className="text-center text-sm text-destructive">Please try a different topic</p>
+          )}
         </div>
       </div>
     </AppShell>

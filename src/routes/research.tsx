@@ -76,12 +76,14 @@ function ResearchPage() {
             {result?.insights.map((insight, i) => {
               const Icon = INSIGHT_ICONS[i % INSIGHT_ICONS.length];
               return (
-                <div key={i} className="card-surface p-5">
+              <div key={i} className="card-surface p-5">
                   <div className="mb-3 flex items-center gap-2">
                     <Icon className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold">Insight {i + 1}</h3>
                   </div>
-                  <p className="text-sm font-semibold text-foreground">{insight.title}</p>
+                  <div className="prose-chat text-sm text-foreground">
+                    <p><strong>{insight.title.replace(/\*\*/g, "")}</strong></p>
+                  </div>
                   <p className="mt-1.5 text-sm text-muted-foreground">{insight.explanation}</p>
                 </div>
               );

@@ -1,5 +1,5 @@
 import { generateText, Output, NoObjectGeneratedError } from "ai";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createLovableAiGatewayProvider } from "./tmp_ai-gateway.server";
 
 async function main() {
   const key = process.env.LOVABLE_API_KEY;

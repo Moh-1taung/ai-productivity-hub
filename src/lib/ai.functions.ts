@@ -3,12 +3,12 @@ import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
-const MODEL = "google/gemini-3.5-flash";
+const MODEL = "openai/gpt-5.5";
 
 function getModel() {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Missing LOVABLE_API_KEY");
-  return createLovableAiGatewayProvider(key)(MODEL);
+  return createLovableAiGatewayProvider(key, undefined, { structuredOutputs: true })(MODEL);
 }
 
 export const generateEmail = createServerFn({ method: "POST" })

@@ -96,9 +96,7 @@ export const researchTopic = createServerFn({ method: "POST" })
         insights: output.insights.slice(0, 3),
       };
     } catch (error) {
-      console.error("Research topic error:", error);
       if (NoObjectGeneratedError.isInstance(error)) {
-        console.error("NoObjectGeneratedError raw text:", error.text);
         return { summary: "", insights: [] };
       }
       throw error;
